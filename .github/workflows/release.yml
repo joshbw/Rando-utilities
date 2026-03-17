@@ -10,24 +10,40 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Sign PowerShell scripts
+        uses: azure/trusted-signing-action@v0
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.TRUSTED_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.TRUSTED_SIGNING_ACCOUNT_NAME }}
+          certificate-profile-name: ${{ secrets.TRUSTED_SIGNING_CERT_PROFILE }}
+          files-folder: ${{ github.workspace }}
+          files-folder-filter: ps1
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
       - name: Zip utilities
         run: |
-          zip jbw_utils.zip \
-            LICENSE \
-            README.md \
-            RefreshEnv.cmd \
-            mdcd.cmd \
-            mdcd.ps1 \
-            mdcd.sh \
-            setup_machine.ps1 \
-            up.cmd \
-            up.ps1 \
-            up.sh
+          Compress-Archive -Path `
+            LICENSE, `
+            README.md, `
+            RefreshEnv.cmd, `
+            mdcd.cmd, `
+            mdcd.ps1, `
+            mdcd.sh, `
+            setup_machine.ps1, `
+            up.cmd, `
+            up.ps1, `
+            up.sh `
+            -DestinationPath jbw_utils.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
