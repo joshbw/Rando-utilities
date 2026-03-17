@@ -32,6 +32,12 @@ jobs:
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
 
+      - name: Generate release tag
+        id: tag
+        run: |
+          $tag = "v$(Get-Date -Format 'yyyy.MM.dd')-$("${{ github.sha }}".Substring(0,7))"
+          echo "RELEASE_TAG=$tag" >> $env:GITHUB_OUTPUT
+
       - name: Zip utilities
         run: |
           Compress-Archive -Path `
@@ -50,5 +56,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
           files: jbw_utils.zip
           generate_release_notes: true
