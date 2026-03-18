@@ -44,6 +44,9 @@ jobs:
             LICENSE, `
             README.md, `
             RefreshEnv.cmd, `
+            math.cmd, `
+            math.ps1, `
+            math.sh, `
             mdcd.cmd, `
             mdcd.ps1, `
             mdcd.sh, `
