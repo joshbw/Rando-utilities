@@ -19,16 +19,20 @@ param(
     - Enables WSL (Windows Subsystem for Linux)
 #>
 
-function Install-WingetApp {
+function Install-WingetApp
+{
     param(
         [string]$Id,
         [string]$Name
     )
     Write-Host "  Installing $Name..." -ForegroundColor Cyan
     $installed = winget list --id $Id --accept-source-agreements 2>&1 | Select-String $Id
-    if ($installed) {
+    if ($installed)
+    {
         Write-Host "    $Name is already installed." -ForegroundColor Green
-    } else {
+    }
+    else
+    {
         winget install --id $Id --exact --accept-package-agreements --accept-source-agreements
         Write-Host "    $Name installed." -ForegroundColor Green
     }
@@ -39,11 +43,14 @@ Write-Host "Applying Windows settings..." -ForegroundColor Cyan
 # Add the current working directory to the user Path environment variable
 $scriptDir = $PSScriptRoot
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($currentPath -split ";" -notcontains $scriptDir) {
+if ($currentPath -split ";" -notcontains $scriptDir)
+{
     Write-Host "  Adding $scriptDir to user Path..."
     [Environment]::SetEnvironmentVariable("Path", "$currentPath;$scriptDir", "User")
     Write-Host "    Added to Path." -ForegroundColor Green
-} else {
+}
+else
+{
     Write-Host "  $scriptDir is already in user Path." -ForegroundColor Green
 }
 
@@ -99,12 +106,15 @@ if ($work)
     # Enable WSL
     Write-Host "  Enabling Windows Subsystem for Linux..." -ForegroundColor Cyan
     $wslFeature = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux
-    if ($wslFeature.State -ne "Enabled") {
+    if ($wslFeature.State -ne "Enabled")
+    {
         Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -NoRestart
         Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -NoRestart
         $restartRequired = $true
         Write-Host "    WSL enabled. A restart will be required." -ForegroundColor Yellow
-    } else {
+    }
+    else
+    {
         Write-Host "    WSL is already enabled." -ForegroundColor Green
     }
 
@@ -120,10 +130,12 @@ Start-Process explorer
 
 Write-Host "All settings applied successfully." -ForegroundColor Green
 
-if ($restartRequired) {
+if ($restartRequired)
+{
     Write-Host "A system restart is required to finish enabling WSL." -ForegroundColor Yellow
     $response = Read-Host "Restart now? (y/N)"
-    if ($response -eq 'y') {
+    if ($response -eq 'y')
+    {
         Restart-Computer -Force
     }
 }
