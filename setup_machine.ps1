@@ -19,6 +19,21 @@ param(
     - Enables WSL (Windows Subsystem for Linux)
 #>
 
+function Install-WingetApp {
+    param(
+        [string]$Id,
+        [string]$Name
+    )
+    Write-Host "  Installing $Name..." -ForegroundColor Cyan
+    $installed = winget list --id $Id --accept-source-agreements 2>&1 | Select-String $Id
+    if ($installed) {
+        Write-Host "    $Name is already installed." -ForegroundColor Green
+    } else {
+        winget install --id $Id --exact --accept-package-agreements --accept-source-agreements
+        Write-Host "    $Name installed." -ForegroundColor Green
+    }
+}
+
 Write-Host "Applying Windows settings..." -ForegroundColor Cyan
 
 # Add the current working directory to the user Path environment variable
@@ -59,32 +74,24 @@ Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\P
 Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0 -Type DWord
 
 # Install Apps via winget
-Write-Host "  Installing Git..." -ForegroundColor Cyan
-$gitInstalled = winget list --id Git.Git --accept-source-agreements 2>&1 | Select-String "Git.Git"
-if ($gitInstalled) {
-    Write-Host "    Git is already installed." -ForegroundColor Green
-} else {
-    winget install --id Git.Git --exact --accept-package-agreements --accept-source-agreements
-    Write-Host "    Git installed." -ForegroundColor Green
-}
-
-winget install OpenJS.NodeJS  --exact --accept-package-agreements --accept-source-agreements
-winget install Microsoft.VisualStudioCode --exact --accept-package-agreements --accept-source-agreements
-winget install GitHub.Copilot --exact --accept-package-agreements --accept-source-agreements
-winget install Microsoft.PowerToys --exact --accept-package-agreements --accept-source-agreements
-winget install Microsoft.Office --exact --accept-package-agreements --accept-source-agreements
+Install-WingetApp -Id "Git.Git" -Name "Git"
+Install-WingetApp -Id "OpenJS.NodeJS" -Name "Node.js"
+Install-WingetApp -Id "Microsoft.VisualStudioCode" -Name "Visual Studio Code"
+Install-WingetApp -Id "GitHub.Copilot" -Name "GitHub Copilot"
+Install-WingetApp -Id "Microsoft.PowerToys" -Name "PowerToys"
+Install-WingetApp -Id "Microsoft.Office" -Name "Microsoft Office"
 if ($work) 
 {
-    winget install SlackTechnologies.Slack --exact --accept-package-agreements --accept-source-agreements
+    Install-WingetApp -Id "SlackTechnologies.Slack" -Name "Slack"
 }
 else
 {
-    winget install Adobe.CreativeCloud --exact --accept-package-agreements --accept-source-agreements
-    winget install OpenWhisperSystems.Signal --exact --accept-package-agreements --accept-source-agreements
-    winget install Valve.Steam --exact --accept-package-agreements --accept-source-agreements
-    winget install Discord.Discord --exact --accept-package-agreements --accept-source-agreements
-    winget install EpicGames.EpicGamesLauncher --exact --accept-package-agreements --accept-source-agreements
-    winget install Blizzard.BattleNet --exact --accept-package-agreements --accept-source-agreements
+    Install-WingetApp -Id "Adobe.CreativeCloud" -Name "Adobe Creative Cloud"
+    Install-WingetApp -Id "OpenWhisperSystems.Signal" -Name "Signal"
+    Install-WingetApp -Id "Valve.Steam" -Name "Steam"
+    Install-WingetApp -Id "Discord.Discord" -Name "Discord"
+    Install-WingetApp -Id "EpicGames.EpicGamesLauncher" -Name "Epic Games Launcher"
+    Install-WingetApp -Id "Blizzard.BattleNet" -Name "Battle.net"
 }
 
 if ($work) 
@@ -101,9 +108,8 @@ if ($work)
         Write-Host "    WSL is already enabled." -ForegroundColor Green
     }
 
-    Write-Host "  Installing Ubuntu and Docker Desktop..." -ForegroundColor Cyan
-    winget install Ubuntu.Ubuntu --exact --accept-package-agreements --accept-source-agreements
-    winget install Docker.DockerDesktop --exact --accept-package-agreements --accept-source-agreements
+    Install-WingetApp -Id "Ubuntu.Ubuntu" -Name "Ubuntu"
+    Install-WingetApp -Id "Docker.DockerDesktop" -Name "Docker Desktop"
 }
 
 # Restart Explorer to apply changes
@@ -121,4 +127,3 @@ if ($restartRequired) {
         Restart-Computer -Force
     }
 }
-
