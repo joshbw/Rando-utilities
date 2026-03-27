@@ -43,24 +43,6 @@ c:\user\joshbw\source>
 
 ---
 
-### math
-
-A command-line calculator that evaluates arithmetic expressions with full PEMDAS support.  Handles both standard infix notation (`2 + 3 * 4`) and prefix/Polish notation (`+ 2 * 3 4`) with auto-detection.  Supports `+`, `-`, `*`, `/`, `^`, `%`, and parentheses.
-
-*Available as: `.cmd` `.ps1` `.sh`*
-
-#### usage
-
-c:\user\joshbw> **math 2 + 3 * 4**
-
-14
-
-c:\user\joshbw> **math (2 + 3) * 4**
-
-20
-
----
-
 ### refreshenv.cmd
 
 So I just installed a new utility, want it in my path, so I go and add it via the environment variables UI, and then go to my already open command prompt, and when I try to use it naturally it can't find the path.  Because existing processes don't update when the global environment variables change.  So one day I got annoyed enough with that to probably look up on a website or something an example of how to pull the global variables out of the registry, and thus refreshenv.cmd.  It refreshes the environment variables.  I'm a brand name genius.
