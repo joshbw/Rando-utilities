@@ -25,14 +25,17 @@ A collection of cross-platform shell utilities and external tool submodules. No 
 
 Lowercase filenames, no underscores in utility names (except `setup_machine.ps1` which is a provisioning script, not a daily utility).
 
+## Building
+
+Run `./build.ps1` (requires PowerShell and `cargo`) to build all Rust projects in `src/external/` for the current platform and assemble output into `.dist/`. Use `-Clean` to wipe `.dist/` first.
+
 ## CI/CD
 
 `release.yml` runs on push/PR to `master`:
-1. Signs `.ps1` files via Azure Trusted Signing
-2. Zips all utilities into `jbw_utils.zip`
-3. Creates a GitHub Release with date-based tag (`v2025.03.27-abc1234`)
+1. **Build job** (matrix: windows, linux, macos): checks out with submodules, installs Rust, builds all Rust projects in `src/external/`, collects binaries + scripts into `.dist/`, uploads as artifacts
+2. **Release job** (push only, windows runner): downloads all platform artifacts, signs `.exe` and `.ps1` files via Azure Trusted Signing, copies signed `.ps1` files to other platform bundles, creates per-platform zip archives, publishes GitHub Release
 
-**Important**: The zip step must explicitly list every file to include. When adding new scripts, update the `Compress-Archive` file list in `.github/workflows/release.yml`.
+When adding new Rust projects to `src/external/`, the build discovers them automatically via `Cargo.toml`. No workflow changes needed for new projects. New scripts in `src/helpful_scripts/` are also picked up automatically.
 
 ## Submodules
 
