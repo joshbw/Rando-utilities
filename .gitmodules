@@ -1,3 +1,6 @@
 [submodule "src/external/rscalc"]
 	path = src/external/rscalc
 	url = https://github.com/joshbw/rscalc.git
+[submodule "src/external/lazymark"]
+	path = src/external/lazymark
+	url = https://github.com/joshbw/lazymark.git
