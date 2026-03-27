@@ -1,0 +1,3 @@
+[submodule "src/external/rscalc"]
+	path = src/external/rscalc
+	url = https://github.com/joshbw/rscalc.git

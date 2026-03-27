@@ -1,7 +1,6 @@
 name: Release
 
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "master" ]
   pull_request:
@@ -11,13 +10,116 @@ permissions:
   contents: write
 
 jobs:
-  release:
-    runs-on: windows-latest
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows
+            binary_ext: .exe
+          - os: ubuntu-latest
+            platform: linux
+            binary_ext: ""
+          - os: macos-latest
+            platform: macos
+            binary_ext: ""
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Sign PowerShell scripts
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build external projects
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path src/external -Directory | ForEach-Object {
+            $cargoToml = Join-Path $_.FullName 'Cargo.toml'
+            if (Test-Path $cargoToml) {
+              Write-Host "Building $($_.Name)..."
+              Push-Location $_.FullName
+              cargo build --release
+              if ($LASTEXITCODE -ne 0) { throw "Build failed for $($_.Name)" }
+              Pop-Location
+            }
+          }
+
+      - name: Collect artifacts
+        shell: pwsh
+        run: |
+          $distDir = '.dist'
+          New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+
+          Get-ChildItem -Path src/external -Directory | ForEach-Object {
+            $cargoToml = Join-Path $_.FullName 'Cargo.toml'
+            if (Test-Path $cargoToml) {
+              $name = (Get-Content $cargoToml |
+                Select-String '^name\s*=\s*"(.+)"' |
+                Select-Object -First 1).Matches.Groups[1].Value
+              $ext = '${{ matrix.binary_ext }}'
+              $binary = Join-Path $_.FullName "target/release/${name}${ext}"
+              if (Test-Path $binary) {
+                Copy-Item $binary -Destination $distDir
+              } else {
+                throw "Expected binary not found: $binary"
+              }
+            }
+          }
+
+          Copy-Item -Path src/helpful_scripts/* -Destination $distDir
+          Copy-Item LICENSE, README.md -Destination $distDir
+
+      - name: Set executable permissions
+        if: matrix.platform != 'windows'
+        run: |
+          chmod +x .dist/*.sh
+          find .dist -maxdepth 1 -type f ! -name '*.*' -exec chmod +x {} +
+
+      - name: Create platform archive (Linux/macOS)
+        if: matrix.platform != 'windows'
+        run: tar czf jbw_utils-${{ matrix.platform }}.tar.gz -C .dist .
+
+      - name: Upload archive (Linux/macOS)
+        if: matrix.platform != 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: archive-${{ matrix.platform }}
+          path: jbw_utils-${{ matrix.platform }}.tar.gz
+
+      - name: Upload artifacts (Windows)
+        if: matrix.platform == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-windows
+          path: .dist/
+
+  release:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: windows-latest
+    steps:
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-windows
+          path: dist-windows
+
+      - name: Download Linux archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-linux
+          path: archives
+
+      - name: Download macOS archive
+        uses: actions/download-artifact@v4
+        with:
+          name: archive-macos
+          path: archives
+
+      - name: Sign Windows executables and PowerShell scripts
         uses: azure/trusted-signing-action@v0
         with:
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -26,39 +128,29 @@ jobs:
           endpoint: ${{ secrets.TRUSTED_SIGNING_ENDPOINT }}
           trusted-signing-account-name: ${{ secrets.TRUSTED_SIGNING_ACCOUNT_NAME }}
           certificate-profile-name: ${{ secrets.TRUSTED_SIGNING_CERT_PROFILE }}
-          files-folder: ${{ github.workspace }}
-          files-folder-filter: ps1
+          files-folder: dist-windows
+          files-folder-filter: exe,ps1
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
 
       - name: Generate release tag
         id: tag
+        shell: pwsh
         run: |
           $tag = "v$(Get-Date -Format 'yyyy.MM.dd')-$("${{ github.sha }}".Substring(0,7))"
           echo "RELEASE_TAG=$tag" >> $env:GITHUB_OUTPUT
 
-      - name: Zip utilities
-        run: |
-          Compress-Archive -Path `
-            LICENSE, `
-            README.md, `
-            RefreshEnv.cmd, `
-            math.cmd, `
-            math.ps1, `
-            math.sh, `
-            mdcd.cmd, `
-            mdcd.ps1, `
-            mdcd.sh, `
-            setup_machine.ps1, `
-            up.cmd, `
-            up.ps1, `
-            up.sh `
-            -DestinationPath jbw_utils.zip
+      - name: Create Windows archive
+        shell: pwsh
+        run: Compress-Archive -Path dist-windows/* -DestinationPath jbw_utils-windows.zip
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.RELEASE_TAG }}
-          files: jbw_utils.zip
+          files: |
+            jbw_utils-windows.zip
+            archives/jbw_utils-linux.tar.gz
+            archives/jbw_utils-macos.tar.gz
           generate_release_notes: true
