@@ -85,6 +85,12 @@ PS> **.\setup_machine.ps1 -work**
 
 ## External Tools
 
+### lazymark
+
+A simple, cross-platform CLI tool for timing command-line benchmarks.  Measure how long any command takes to execute — once, multiple times with statistics, or in batch from a file.  Supports direct, file-based, and interactive modes with optional logging to CSV, JSON, or text.
+
+See the [lazymark repository](https://github.com/joshbw/lazymark) for full documentation and usage.
+
 ### rscalc
 
 A cross-platform CLI calculator powered by arbitrary-precision rational arithmetic.  It's a Rust port of the Microsoft Windows Calculator engine, with an interactive REPL mode and non-interactive scripting support.  Includes three calculator modes (Standard, Scientific, Programmer) and 40+ mathematical functions.
